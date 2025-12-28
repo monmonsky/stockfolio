@@ -1,0 +1,125 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Stock {
+  id           Int        @id @default(autoincrement())
+  stockCode    String     @map("stock_code") @db.VarChar(10)
+  stockName    String?    @map("stock_name") @db.VarChar(100)
+  lotQuantity  Int        @map("lot_quantity")
+  buyPrice     Decimal    @map("buy_price") @db.Decimal(15, 2)
+  buyDate      DateTime   @map("buy_date") @db.Date
+  brokerFee    Decimal    @default(0) @map("broker_fee") @db.Decimal(15, 2)
+  currentPrice Decimal?   @map("current_price") @db.Decimal(15, 2)
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  dividends    Dividend[]
+
+  @@index([stockCode])
+  @@map("stocks")
+}
+
+model Dividend {
+  id               Int       @id @default(autoincrement())
+  stockId          Int?      @map("stock_id")
+  stockCode        String    @map("stock_code") @db.VarChar(10)
+  dividendPerShare Decimal   @map("dividend_per_share") @db.Decimal(15, 2)
+  totalShares      Int       @map("total_shares")
+  totalDividend    Decimal   @map("total_dividend") @db.Decimal(15, 2)
+  cumDate          DateTime? @map("cum_date") @db.Date
+  paymentDate      DateTime? @map("payment_date") @db.Date
+  paymentMonth     Int       @map("payment_month")
+  paymentYear      Int       @map("payment_year")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  stock            Stock?    @relation(fields: [stockId], references: [id], onDelete: SetNull)
+
+  @@index([stockCode])
+  @@index([paymentYear, paymentMonth])
+  @@map("dividends")
+}
+
+model MarketStock {
+  id            Int      @id @default(autoincrement())
+  symbol        String   @unique @db.VarChar(10)
+  companyName   String?  @map("company_name") @db.VarChar(200)
+  logo          String?  @db.VarChar(500)
+  price         Decimal  @db.Decimal(15, 2)
+  change        Decimal  @db.Decimal(15, 2)
+  changePercent Decimal  @map("change_percent") @db.Decimal(10, 4)
+  volume        BigInt   @default(0)
+  open          Decimal? @db.Decimal(15, 2)
+  high          Decimal? @db.Decimal(15, 2)
+  low           Decimal? @db.Decimal(15, 2)
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("market_stocks")
+}
+
+model TrendingStock {
+  id            Int      @id @default(autoincrement())
+  symbol        String   @db.VarChar(10)
+  companyName   String?  @map("company_name") @db.VarChar(200)
+  logo          String?  @db.VarChar(500)
+  price         Decimal  @db.Decimal(15, 2)
+  change        Decimal  @db.Decimal(15, 2)
+  changePercent Decimal  @map("change_percent") @db.Decimal(10, 4)
+  volume        BigInt   @default(0)
+  category      String   @db.VarChar(20) // 'gainer', 'loser', 'active'
+  rank          Int      @default(0)
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@unique([symbol, category])
+  @@index([category])
+  @@map("trending_stocks")
+}
+
+model MarketNews {
+  id          Int      @id @default(autoincrement())
+  title       String   @db.VarChar(500)
+  description String?  @db.Text
+  url         String   @unique @db.VarChar(1000)
+  image       String?  @db.VarChar(1000)
+  publishedAt DateTime @map("published_at")
+  source      String?  @db.VarChar(100)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([publishedAt])
+  @@map("market_news")
+}
+
+model Watchlist {
+  id           Int      @id @default(autoincrement())
+  symbol       String   @unique @db.VarChar(10)
+  companyName  String?  @map("company_name") @db.VarChar(200)
+  logo         String?  @db.VarChar(500)
+  targetPrice  Decimal? @map("target_price") @db.Decimal(15, 2)
+  notes        String?  @db.Text
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("watchlist")
+}
+
+model Transaction {
+  id            Int      @id @default(autoincrement())
+  stockCode     String   @map("stock_code") @db.VarChar(10)
+  stockName     String?  @map("stock_name") @db.VarChar(100)
+  type          String   @db.VarChar(10) // 'BUY' or 'SELL'
+  lotQuantity   Int      @map("lot_quantity")
+  pricePerShare Decimal  @map("price_per_share") @db.Decimal(15, 2)
+  totalAmount   Decimal  @map("total_amount") @db.Decimal(15, 2)
+  brokerFee     Decimal  @default(0) @map("broker_fee") @db.Decimal(15, 2)
+  transactionDate DateTime @map("transaction_date") @db.Date
+  notes         String?  @db.Text
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([stockCode])
+  @@index([transactionDate])
+  @@index([type])
+  @@map("transactions")
+}
